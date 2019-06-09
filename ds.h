@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-09 21:03:14
+ * @LastEditTime: 2019-06-10 00:42:51
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
@@ -21,33 +21,33 @@ typedef struct _task_node {
 	void *(*func)(void *); //任务执行函数指针
 	int task_id;           //任务自身的ID
 	pthread_t tid;         //执行任务的tid
-	bool flag;             //任务是否被派发
+	char flag;             //任务是否被派发
 
 	struct _task_node *next;      //链表的下一个结点
 	pthread_mutex_t mutex; //用于互斥访问本节点
-} task_node;
+} task_node_t;
 
 //任务队列
 typedef struct _task_queue {
-	task_node *head; //队列头节点
+	struct task_node *head; //队列头节点
 	int number;      //任务数,包含未分配的和已经分但未完成
 
 	pthread_mutex_t mutex; //线程互斥访问本队列
 	pthread_cond_t cond; //没有任务将阻塞管理线程,来了新任务将唤醒
-} task_queue;
+} task_queue_t;
 
 //线程节点
 typedef struct _thread_node {
 	pthread_t tid; //线程tid
-	bool flag; //是否忙
-	task_node *task; //分配的任务
+	char flag; //是否忙
+	task_node_t *task; //分配的任务
 
-	struct _thread_node prev; //前面的线程
-	struct _thread_node next; //后面的线程
+	struct _thread_node *prev; //前面的线程
+	struct _thread_node *next; //后面的线程
 	pthread_mutex_t mutex; //线程互斥访问当前结点
 	//当管理线程没有投递任务时,休眠,管理线程分配任务时候signal
 	pthread_cond_t cond; 
-} thread_node;
+} thread_node_t;
 
 //线程队列
 typedef struct _pthread_queue {
@@ -58,7 +58,7 @@ typedef struct _pthread_queue {
 	pthread_mutex_t mutex; //线程互斥访问这个队列
 	//没有空闲线程则阻塞,有空闲线程或有完成任务的线程则唤醒
 	pthread_cond_t cond; 
-}
+} thread_queue_t;
 
 //客户端服务端发送消息的结构
 struct info {
@@ -66,5 +66,12 @@ struct info {
 	char path; //请求的文件名/路径
 	int file_begin; //获取状态时不使用
 	int len; //获取状态时不使用
-}
+};
 
+
+//函数声明
+void *thread_manager(void *ptr);
+void *task_manager(void *ptr);
+void *monitor(void *ptr);
+
+#endif
