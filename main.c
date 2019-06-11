@@ -26,14 +26,18 @@ thread_queue_t *thread_queue_idle; //线程空闲队列
 int main(int argc, char *argv[])
 {
 	pthread_t thread_manager_tid, task_manager_tid, monitor_tid;
+	//全局指针的初始化
+	init_pool();
 
 	pthread_create(&thread_manager_tid, NULL, thread_manager, NULL);
 	pthread_create(&task_manager_tid, NULL, task_manager, NULL);
 	pthread_create(&monitor_tid, NULL, monitor, NULL);
-
+	
 	pthread_join(thread_manager_tid, NULL);
 	pthread_join(task_manager_tid, NULL);
 	pthread_join(monitor_tid, NULL);
+
+	exit_pool();
 
 	return 0;
 }

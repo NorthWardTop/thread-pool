@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-10 00:42:51
+ * @LastEditTime: 2019-06-10 23:46:51
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
@@ -14,6 +14,11 @@
 
 //通用宏定义
 #define PORT 51024
+
+#define THREAD_MAX_NUM  100     /* max number of thread. */ 
+#define THREAD_DEF_NUM  20      /* by default ,number of thread. */
+#define THREAD_MIN_NUM  5       /* min number of thread pool. */
+
 
 //任务节点
 typedef struct _task_node {
@@ -73,5 +78,9 @@ struct info {
 void *thread_manager(void *ptr);
 void *task_manager(void *ptr);
 void *monitor(void *ptr);
+void init_pool();
+void create_pool();
+
 
 #endif
+

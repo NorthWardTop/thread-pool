@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "common.h": "c",
+        "types.h": "c",
+        "ratio": "c",
+        "wait.h": "c",
+        "unistd.h": "c",
+        "iosfwd": "c",
+        "pthread.h": "c",
+        "list.h": "c",
+        "kernel.h": "c",
+        "module.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled",
+    "[cpp]": {
+        "editor.quickSuggestions": true
+        },
+    "[c]": {
+        "editor.quickSuggestions": true
+    }
+}
