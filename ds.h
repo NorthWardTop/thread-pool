@@ -3,13 +3,17 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-10 23:46:51
+ * @LastEditTime: 2019-06-21 23:46:58
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
 #ifndef __DS_H__
 #define __DS_H__
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
 #include <pthread.h>
 
 //通用宏定义
@@ -55,11 +59,11 @@ typedef struct _thread_node {
 } thread_node_t;
 
 //线程队列
-typedef struct _pthread_queue {
+typedef struct _thread_queue {
 	int number; //队列中的线程数
 
-	struct _pthread_queue *head;
-	struct _pthread_queue *rear; 
+	struct _thread_node *head;
+	struct _thread_node *rear; 
 	pthread_mutex_t mutex; //线程互斥访问这个队列
 	//没有空闲线程则阻塞,有空闲线程或有完成任务的线程则唤醒
 	pthread_cond_t cond; 
@@ -75,11 +79,16 @@ struct info {
 
 
 //函数声明
+void init_pool();
+void pool_create();
+void pool_destroy(thread_queue_t *tp);
+void exit_pool();
+
 void *thread_manager(void *ptr);
 void *task_manager(void *ptr);
 void *monitor(void *ptr);
-void init_pool();
-void create_pool();
+
+void *do_work(void *arg);
 
 
 #endif

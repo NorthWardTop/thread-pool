@@ -3,13 +3,11 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:20
  * @LastEditors: northward
- * @LastEditTime: 2019-06-10 00:21:25
+ * @LastEditTime: 2019-06-21 22:59:25
  * @Description: 线程池main函数,用于
  * 启动线程管理线程, 监控线程, 任务管理线程
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
+
 #include "ds.h"
 
 //全局队列定义

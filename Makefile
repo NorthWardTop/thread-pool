@@ -1,5 +1,5 @@
 CC = gcc
-CCFLAG = -g
+CCFLAG = -g -Wall
 TARGET = thread_pool
 SRC = pool.c main.c
 OBJECT = pool.o  main.o
