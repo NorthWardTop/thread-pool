@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-06-21 23:46:56
+ * @LastEditTime: 2019-06-23 00:21:58
  * @Description: 线程池函数实现
  */
 
@@ -99,13 +99,74 @@ void pool_create()
 
 
 /**
- * @description: 
+ * @description: 每个线程的工作函数
+ * 完成各个线程工作的运行和释放
+ * 完成两个线程队列间线程的迁移
  * @param {type} 
  * @return: 
  */
 void *do_work(void *arg)
 {
-	
+	//保存线程指针
+	thread_node_t *self = (thread_node_t*)arg;
+	pthread_mutex_lock(&self->mutex); //进入本线程上锁
+	self->tid = syscall(SYS_gettid); //明确自己的tid
+	pthread_mutex_unlock(&self->mutex); //设置好tid就解锁
+
+	//死循环去执行或等待任务
+	while (1) {
+		pthread_mutex_lock(&self->mutex); //上锁自己,代码保护区
+		if (self->task == NULL) //当前线程是空任务就等待
+			pthread_cond_wait(&self->cond, &self->mutex);
+		//所有线程,如果没有任务,都阻塞在上述代码,等待
+		//否则就是有任务,继续执行,去锁定任务->执行任务
+		pthread_mutex_lock(&self->task->mutex);
+		self->task->func(self->task->arg);
+
+		//执行完成后从小到大清理整个任务
+		//1. 设置和释放任务和任务参数等属性
+		self->task->func = NULL; //下一轮睡觉
+		self->task->flag = 0;
+		self->task->tid = 0;
+		self->task->next = NULL;
+		free(self->task->arg); //释放任务参数和任务锁
+		pthread_mutex_unlock(&self->task->mutex);
+		pthread_mutex_destroy(&self->task->mutex);
+		free(self->task); //最后释放任务内存
+		//2. 复原线程节点属性
+		self->task = NULL;
+		self->flag = 0;
+
+		//从任务队列中取新任务
+		pthread_mutex_lock(&task_queue_head);
+		if (task_queue_head != NULL) {
+			//如果队列有任务,保存任务节点并设置到当前线程上
+			//取任务,头指针后移
+			task_node_t *task = task_queue_head->head;
+			task_queue_head->head = task_queue_head->head->next; 
+
+			//设置线程对象,让他下一轮运行起来
+			self->flag = 1;
+			self->task = task;
+			//设置任务对象
+			task->tid = self->tid;
+			task->next = NULL; //一个任务如果有多个任务节点
+			task->flag = 1;
+
+			task_queue_head->number--;
+
+			//解锁任务队列,解锁线程,退出保护区
+			pthread_mutex_unlock(&task_queue_head->mutex);
+			pthread_mutex_unlock(&self->mutex);
+			continue; //返回下轮直接执行
+		} else {
+			//如果任务队列空了
+			...
+		}
+
+	}
+
+	return NULL;
 }
 
 

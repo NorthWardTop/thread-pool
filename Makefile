@@ -1,6 +1,6 @@
 CC = gcc
-CCFLAG = -g -Wall
-TARGET = thread_pool
+CCFLAG = -Wall -g
+TARGET = pool
 SRC = pool.c main.c
 OBJECT = pool.o  main.o
 INCLUDES = -I./
@@ -10,10 +10,10 @@ LDFLAGS = -lpthread
 all:$(TARGET) 
 
 $(OBJECT):$(SRC)
-	$(CC)  -c $(INCLUDES) ${SRC}
+	$(CC) $(CCFLAG) -c $(INCLUDES) ${SRC}
 
 $(TARGET):$(OBJECT)
-	$(CC) $(CCFLAG) -o $@ $(OBJECT) $(LDFLAGS)
+	$(CC) -o $@ $(OBJECT) $(LDFLAGS)
 
 client:client.c
 	$(CC) $(CCFLAG) -o $@ $^

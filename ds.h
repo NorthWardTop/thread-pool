@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-21 23:46:58
+ * @LastEditTime: 2019-06-23 00:09:41
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
@@ -38,7 +38,7 @@ typedef struct _task_node {
 
 //任务队列
 typedef struct _task_queue {
-	struct task_node *head; //队列头节点
+	task_node_t *head; //队列头节点
 	int number;      //任务数,包含未分配的和已经分但未完成
 
 	pthread_mutex_t mutex; //线程互斥访问本队列
