@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-23 00:09:41
+ * @LastEditTime: 2019-06-23 21:24:49
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
@@ -14,7 +14,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h> 
+
 
 //通用宏定义
 #define PORT 51024

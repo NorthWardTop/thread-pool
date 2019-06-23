@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-06-23 00:21:58
+ * @LastEditTime: 2019-06-23 21:57:54
  * @Description: 线程池函数实现
  */
 
@@ -58,8 +58,8 @@ void pool_create()
 {
 	int i=0;
 	//分配一个动态一维数组的内存, 数组个数为默认池子大小
-	struct _thread_node *tmp = (struct _thread_node*)
-		malloc(sizeof(struct _thread_node)*THREAD_DEF_NUM);
+	thread_node_t *tmp = (thread_node_t*)
+		malloc(sizeof(thread_node_t)*THREAD_DEF_NUM);
 	if (tmp == NULL) {
 		perror("create_pool: malloc failed!");
 		exit_pool();
@@ -137,8 +137,8 @@ void *do_work(void *arg)
 		self->task = NULL;
 		self->flag = 0;
 
-		//从任务队列中取新任务
-		pthread_mutex_lock(&task_queue_head);
+		//从任务队列中取新任务 BUG?
+		pthread_mutex_lock(&task_queue_head->mutex);
 		if (task_queue_head != NULL) {
 			//如果队列有任务,保存任务节点并设置到当前线程上
 			//取任务,头指针后移
@@ -152,7 +152,6 @@ void *do_work(void *arg)
 			task->tid = self->tid;
 			task->next = NULL; //一个任务如果有多个任务节点
 			task->flag = 1;
-
 			task_queue_head->number--;
 
 			//解锁任务队列,解锁线程,退出保护区
@@ -160,12 +159,53 @@ void *do_work(void *arg)
 			pthread_mutex_unlock(&self->mutex);
 			continue; //返回下轮直接执行
 		} else {
-			//如果任务队列空了
-			...
+			//如果任务队列空,没有任务去执行,将当前结点从忙队列移动到空闲队列
+			//1. 从忙队列摘除,有四种情况:只有这一个节点,头上,尾巴,中间
+			if (thread_queue_busy->head == self && thread_queue_busy->rear == self) {
+				//只有这一个节点
+				thread_queue_busy->head = NULL;
+				thread_queue_busy->rear = NULL;
+				self->prev = NULL; self->next = NULL;
+			} else if (thread_queue_busy->head == self && thread_queue_busy->rear != self) {
+				//头上
+				thread_queue_busy->head = thread_queue_busy->head->next;
+				thread_queue_busy->head->prev = NULL;
+				self->prev = NULL; self->next = NULL;
+			} else if (thread_queue_busy->head != self && thread_queue_busy->rear == self) {
+				//尾巴
+				thread_queue_busy->rear = thread_queue_busy->rear->prev;
+				thread_queue_busy->rear->next = NULL;
+				self->prev = NULL; self->next = NULL;
+			} else {
+				//中间
+				self->prev->next = self->next;
+				self->next->prev = self->prev;
+				self->prev = NULL; self->next = NULL;
+			}
+			//从忙队列摘除完成,解锁忙队列
+			pthread_mutex_unlock(&thread_queue_busy->mutex);
+
+			//2. 将self线程加到空闲队列,两种情况:队列空,不空就放在头上
+			pthread_mutex_lock(&thread_queue_idle->mutex);
+			//BUG?
+			if (thread_queue_idle->head == NULL && thread_queue_idle->rear == NULL) {
+				thread_queue_idle->head = self;
+				thread_queue_idle->rear = self;
+				self->prev = NULL; self->next = NULL;
+				//thread_queue_idle->number++;//BUG?
+			} else {
+				thread_queue_idle->head->prev = self;
+				self->prev = NULL;
+				self->next = thread_queue_idle->head;
+				thread_queue_idle->head = self;
+				thread_queue_idle->number++;
+			}
+			pthread_mutex_unlock(&thread_queue_idle->mutex);
+			pthread_mutex_unlock(&self->mutex);
+			//有新空闲节点加入,激活条件变量
+			pthread_cond_signal(&thread_queue_idle->cond);
 		}
-
 	}
-
 	return NULL;
 }
 
