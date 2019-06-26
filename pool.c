@@ -3,12 +3,13 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-06-23 21:57:54
+ * @LastEditTime: 2019-06-27 00:55:58
  * @Description: 线程池函数实现
  */
 
 
 #include "ds.h"
+
 
 //全局变量声明
 extern task_queue_t *task_queue_head;	 //任务队列
@@ -65,11 +66,12 @@ void pool_create()
 		exit_pool();
 	}
 
-	for (; i<THREAD_DEF_NUM; ++i) {
-		tmp[i].tid = 0;//没创建线程先初始化为0
+	for (i = 0; i<THREAD_DEF_NUM; ++i) {
+		tmp[i].tid = i+1;//没创建线程先初始化为0
 		tmp[i].flag = 0;//空闲
 		tmp[i].task = NULL; //没有任务
-		//分别设置这个节点的前后
+
+		//分别设置这个节点的前后 BUG?
 		if (i == 0) 
 			tmp[i].prev = NULL;
 		else
@@ -79,12 +81,13 @@ void pool_create()
 			tmp[i].next = NULL;
 		else
 			tmp[i].next = &tmp[i+1];
+
 		//初始化这个线程节点的条件锁和互斥锁
 		pthread_mutex_init(&tmp[i].mutex, NULL);
 		pthread_cond_init(&tmp[i].cond, NULL);
 		//创建这个线程, 使他执行do_work(),
 		//没有任务的将全部阻塞在这个函数上
-		pthread_create(&tmp[i].tid, NULL, do_work, NULL);
+		pthread_create(&tmp[i].tid, NULL, do_work, (void*)&tmp[i]);
 	}
 	//将空闲线程指针head指向数组第一个
 	//也可以不加锁
@@ -220,7 +223,7 @@ void *do_work(void *arg)
  */
 void pool_destroy(thread_queue_t *tp)
 {
-
+	
 }
 
 /**
@@ -262,6 +265,7 @@ void exit_pool()
 
 }
 
+
 void *thread_manager(void *ptr)
 {
 	while (1) {
@@ -270,13 +274,79 @@ void *thread_manager(void *ptr)
 	return NULL;
 }
 
+/**
+ * @description: socket服务端,连接客户端请求并将连接句柄传递给任务节点参数
+ * 具体实现:
+ * 		1. 网络编程五步走(ip地址信息直接从网卡获取)
+ * 			socket->sockaddr_in->bind->listen->accept
+ * 		2. 循环accept阻塞等待新连接句柄
+ * 		3. 有新句柄则创建任务节点, 并将句柄作为任务参数传递
+ * 		4. 放入任务队列
+ * @param {type} 
+ * @return: 
+ */
 void *task_manager(void *ptr)
 {
+	int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	int ret = -1;
+	if (listen_fd < 0) {
+		perror("socket failed!\n");
+		goto socket_err;
+	}
+	//interface request获取地址
+	struct ifreq ifr;
+	strcpy(ifr.ifr_name, "lo");
+	ret = ioctl(list_fd, SIOCGIFADDR, &ifr); //获取PA addr
+	if (ret < 0) {
+		perror("ioctl get PA addr failed!\n");
+		goto getaddr_err;
+	}
+
+	//设置sockaddr_in对象
+	struct sockaddr_in addr;
+	...
+
+
+
+getaddr_err:
+	close(listen_fd);
+
+socket_err:
+	pool_destroy(thread_queue_idle);
+	pool_destroy(thread_queue_busy);
 	return NULL;
 }
 
+/**
+ * @description: 每10秒遍历并打印忙队列所有的线程id和任务id 
+ * 待扩展: 当空闲线程数在50秒内都处于空, 创建新线程
+ * 		  当空闲线程数在50秒内都处于4/5以上, 销毁2/3的线程
+ * @param {NULL} 
+ * @return: NULL
+ */
 void *monitor(void *ptr)
 {
+	thread_node_t *thread = NULL;
+	//线程主循环不终止
+	while (1)
+	{
+		//上锁
+		pthread_mutex_lock(&thread_queue_busy->mutex);
+		printf("----------------begin------------------\n");
+		thread = thread_queue_busy->head;
+		//遍历队列
+		while (thread)
+		{
+			printf("thread id: %ld, task id: %d\n", thread->tid, thread->task->task_id);
+			thread = thread->next;
+		}
+		printf("----------------end------------------\n");
+		//解锁队列
+		pthread_mutex_unlock(&thread_queue_busy->mutex);
+		//等待几秒再遍历
+		sleep(5);
+	}
+
 	return NULL;
 }
 

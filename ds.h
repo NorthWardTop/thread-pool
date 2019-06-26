@@ -3,20 +3,30 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-23 21:24:49
+ * @LastEditTime: 2019-06-27 00:47:20
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
 #ifndef __DS_H__
 #define __DS_H__
 
-
+// 标准库
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <unistd.h>
+#include <sys/types.h>          /* See NOTES */
 #include <sys/syscall.h> 
+#include <sys/ioctl.h>
+#include <fcntl.h> //文件控制
 
+// 网络
+#include <sys/socket.h> 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+
+// 三方库
+#include <pthread.h>
 
 //通用宏定义
 #define PORT 51024
