@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-29 17:52:51
+ * @LastEditTime: 2019-06-29 23:50:26
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
@@ -18,8 +18,8 @@
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <sys/types.h> /* See NOTES */
+#include <sys/stat.h>
 #include <unistd.h>
-
 
 // 网络
 #include <arpa/inet.h>
@@ -31,12 +31,17 @@
 #include <pthread.h>
 
 //通用宏定义
-#define ARG_SIZE 128
-#define PORT 51024
+#define ARG_SIZE    128
+#define MSG_SIZE    256
+#define PORT        51024
 
 #define THREAD_MAX_NUM 100 /* max number of thread. */
 #define THREAD_DEF_NUM 20  /* by default ,number of thread. */
 #define THREAD_MIN_NUM 5   /* min number of thread pool. */
+
+// client function
+#define FILE_STAT 1
+#define FILE 2
 
 //任务节点
 typedef struct _task_node {
@@ -84,12 +89,12 @@ typedef struct _thread_queue {
 } thread_queue_t;
 
 //客户端服务端发送消息的结构
-struct info {
+typedef struct info {
   char flag;      // 0:文件状态stat, 1:文件内容
-  char path;      //请求的文件名/路径
+  char path[PATH_LEN];      //请求的文件名/路径
   int file_begin; //获取状态时不使用
   int len;        //获取状态时不使用
-};
+} info_t;
 
 /************************线程池的初始化和退出******************************/
 void init_pool();
@@ -107,7 +112,5 @@ void *do_work(void *arg);
 void *proc_client(void *cli_fd);
 
 /************************客户端逻辑******************************/
-
-
 
 #endif
