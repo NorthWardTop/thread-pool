@@ -1,8 +1,8 @@
 CC = gcc
 CCFLAG = -Wall -g
 TARGET = pool
-SRC = pool.c main.c
-OBJECT = pool.o  main.o
+SRC = pool.c main.c proc-client.c
+OBJECT = pool.o  main.o proc-client.o
 INCLUDES = -I./
 LDFLAGS = -lpthread
 

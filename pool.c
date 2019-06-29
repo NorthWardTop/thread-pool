@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-06-27 00:55:58
+ * @LastEditTime: 2019-06-29 18:20:46
  * @Description: 线程池函数实现
  */
 
@@ -15,6 +15,8 @@
 extern task_queue_t *task_queue_head;	 //任务队列
 extern thread_queue_t *thread_queue_busy; //线程忙队列
 extern thread_queue_t *thread_queue_idle; //线程空闲队列
+
+
 
 /**
  * @description: 初始化线程池的全局变量
@@ -296,21 +298,86 @@ void *task_manager(void *ptr)
 	//interface request获取地址
 	struct ifreq ifr;
 	strcpy(ifr.ifr_name, "lo");
-	ret = ioctl(list_fd, SIOCGIFADDR, &ifr); //获取PA addr
+	ret = ioctl(listen_fd, SIOCGIFADDR, &ifr); //获取PA addr
 	if (ret < 0) {
 		perror("ioctl get PA addr failed!\n");
 		goto getaddr_err;
 	}
 
 	//设置sockaddr_in对象
-	struct sockaddr_in addr;
-	...
+	struct sockaddr_in srv_addr;
+	srv_addr.sin_family = AF_INET;
+	srv_addr.sin_port = htons(PORT);
+	srv_addr.sin_addr.s_addr =  /* 直接从ifr.ifr_addr接口中取地址(ifconfig) */
+		((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr.s_addr;
 
 
+	//bind
+	ret = bind(listen_fd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
+	if (ret < 0) {
+		perror("server socket bind failed!\n");
+		goto bind_err;
+	}
+	//listen
+	ret = listen(listen_fd, 5);
+	if(ret < 0) {
+		perror("server listen failed!\n");
+		goto listen_err;
+	}
 
+	//server initialize complete, start accept new task
+	for (int i = 0; 1; ++i) {
+		int cli_fd;
+		struct sockaddr_in cli_addr;
+		socklen_t len = sizeof(cli_addr);
+		//如果没有新连接请求, 该线程将阻塞在这
+		cli_fd = accept(listen_fd, (struct sockaddr*)&cli_addr, &len);
+		if (cli_fd < 0) {
+			perror("server accept a client failed!\n");
+			goto accept_err;
+		}
+		printf("accepted");
+
+		//新连接接受完成, 开始new task
+		task_node_t* tmp;
+		task_node_t* newtask = (task_node_t*)malloc(sizeof(task_node_t));
+		newtask->arg = malloc(ARG_SIZE);
+		if (newtask == NULL || newtask->arg == NULL) {
+			perror("new task malloc failed!\n");
+			goto malloc_err;
+		}
+
+		//填充新的task任务节点
+		memset(newtask->arg, '\0', ARG_SIZE);
+		sprintf(newtask->arg, "%d", cli_fd); //将参数设置进新任务
+		newtask->task_id = i; //task_id是循环变量
+		newtask->flag = 0;
+		newtask->func = proc_client;
+		newtask->next = NULL;
+		newtask->tid = 0;
+		//初始化这个节点的互斥锁
+		pthread_mutex_init(&newtask->mutex, NULL);
+		pthread_mutex_lock(&task_queue_head->mutex); //锁定队列,开始加入
+		if (task_queue_head->head == NULL) {
+			task_queue_head->head = newtask;
+		} else {
+			tmp = task_queue_head->head;
+			while (tmp) 
+				tmp = tmp->next;
+			tmp->next = newtask;
+		}
+		task_queue_head->number++;
+		//任务添加完成,解锁并激活队列
+		pthread_mutex_unlock(&task_queue_head->mutex);
+		pthread_cond_signal(&task_queue_head->cond);
+	}
+
+malloc_err:
+accept_err:
+listen_err:
+bind_err:
 getaddr_err:
 	close(listen_fd);
-
 socket_err:
 	pool_destroy(thread_queue_idle);
 	pool_destroy(thread_queue_busy);
