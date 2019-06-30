@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 18:49:12
  * @LastEditors: northward
- * @LastEditTime: 2019-06-29 23:50:26
+ * @LastEditTime: 2019-06-30 15:48:26
  * @Description: 用于描述线程池用到的各种结构的定义,函数的声明,和全局变量的声明
  * ds是data segment缩写
  */
@@ -12,6 +12,7 @@
 
 // 标准库
 #include <fcntl.h> //文件控制
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -91,7 +92,7 @@ typedef struct _thread_queue {
 //客户端服务端发送消息的结构
 typedef struct info {
   char flag;      // 0:文件状态stat, 1:文件内容
-  char path[PATH_LEN];      //请求的文件名/路径
+  char path[MSG_SIZE];      //请求的文件名/路径
   int file_begin; //获取状态时不使用
   int len;        //获取状态时不使用
 } info_t;
