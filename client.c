@@ -75,13 +75,18 @@ int main(int argc, char *argv[])
 
 	/* 测试二 获取文件/下载文件 */
 	//服务端逻辑仅仅服务一次, 重新服务必须重新连接
-
+	cli_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (cli_fd) {
+		perror("client socket failed!\n");
+		return 0;
+	}
 	ret = connect(cli_fd, (struct sockaddr*)srvaddr, sizeof(srvaddr));
 	if (ret < 0) {
 		perror("client connect failed!\n");
 		close(cli_fd);
 		return 0;
 	}
+	//
 
 
 	sendmsg.file_begin
