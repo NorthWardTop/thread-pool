@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-06-29 18:20:46
+ * @LastEditTime: 2019-07-05 23:18:47
  * @Description: 线程池函数实现
  */
 
@@ -267,12 +267,65 @@ void exit_pool()
 
 }
 
-
+/**
+ * @description: 从任务队列取任务,从空闲队列取线程,
+ * 修改任务,修改线程,加入忙队列
+ * @param {type} 
+ * @return: 
+ */
 void *thread_manager(void *ptr)
 {
 	while (1) {
+		task_node_t *tmp_task;
+		thread_node_t *tmp_thread;
+
+		//取任务
+		pthread_mutex_lock(&task_queue_head->mutex);
+		if (task_queue_head->number == 0) 
+			pthread_cond_wait(&task_queue_head->cond, &task_queue_head->mutex);
+		tmp_task = task_queue_head->head;
+		task_queue_head->head = task_queue_head->head->next;
+		tmp_task->next = NULL; //切断和队列关联
+		task_queue_head->number--;
+		pthread_mutex_unlock(&task_queue_head->mutex);
+
+		//取线程
+		pthread_mutex_lock(&thread_queue_idle->mutex);
+		if (thread_queue_idle->number == 0) 
+			pthread_cond_wait(&thread_queue_idle->cond, &thread_queue_idle->mutex);
+		tmp_thread = thread_queue_idle->head;
+		if (thread_queue_idle->head == thread_queue_idle->rear) {
+			thread_queue_idle->head = NULL;
+			thread_queue_idle->rear = NULL;
+		} else {
+			thread_queue_idle->head = thread_queue_idle->head->next;
+			thread_queue_idle->head->prev = NULL;
+		}
+		thread_queue_idle->number--; 
+		pthread_mutex_unlock(&thread_queue_idle->mutex);
+
+		//设置任务
+		pthread_mutex_lock(&tmp_task->mutex);
+		// tmp_task->arg = NULL; 任务参数和函数在创建时候已经赋值
+		tmp_task->flag = 1; 
+		tmp_task->next = NULL;
+		tmp_task->tid = tmp_thread->tid;
+		pthread_mutex_unlock(&tmp_task->mutex);
 		
-	} 
+		//设置线程
+		pthread_mutex_lock(&tmp_thread->mutex);
+		tmp_thread->flag = 1;
+		tmp_thread->next = NULL;
+		tmp_thread->prev = NULL;
+		tmp_thread->task = tmp_task;
+		pthread_mutex_unlock(&tmp_thread->mutex);
+
+		//添加到忙队列
+		if ()
+
+
+
+	}
 	return NULL;
 }
 
