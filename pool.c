@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-07-05 23:18:47
+ * @LastEditTime: 2019-07-06 00:26:04
  * @Description: 线程池函数实现
  */
 
@@ -321,8 +321,21 @@ void *thread_manager(void *ptr)
 		pthread_mutex_unlock(&tmp_thread->mutex);
 
 		//添加到忙队列
-		if ()
+		pthread_mutex_lock(&thread_queue_busy->mutex);
+		if (thread_queue_busy->head == thread_queue_busy->rear) {
+			thread_queue_busy->head = tmp_thread;
+			thread_queue_busy->rear = tmp_thread;
+		} else {
+			thread_queue_busy->head->prev = tmp_thread;
+			tmp_thread->next = thread_queue_busy->head;
+			thread_queue_busy->head = tmp_thread;
+		}
+		thread_queue_busy->number++;
+		pthread_mutex_unlock(&thread_queue_busy->mutex);
 
+		pthread_cond_signal(&tmp_thread->cond);
+		//没有人等待忙队列
+		// pthread_cond_signal(&thread_queue_busy->cond);
 
 
 	}
