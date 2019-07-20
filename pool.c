@@ -3,7 +3,7 @@
  * @Github: https://github.com/northwardtop
  * @Date: 2019-06-09 21:08:52
  * @LastEditors: northward
- * @LastEditTime: 2019-07-06 00:26:04
+ * @LastEditTime: 2019-07-20 15:27:44
  * @Description: 线程池函数实现
  */
 
@@ -144,7 +144,7 @@ void *do_work(void *arg)
 
 		//从任务队列中取新任务 BUG?
 		pthread_mutex_lock(&task_queue_head->mutex);
-		if (task_queue_head != NULL) {
+		if (task_queue_head->head != NULL) {
 			//如果队列有任务,保存任务节点并设置到当前线程上
 			//取任务,头指针后移
 			task_node_t *task = task_queue_head->head;
@@ -164,6 +164,8 @@ void *do_work(void *arg)
 			pthread_mutex_unlock(&self->mutex);
 			continue; //返回下轮直接执行
 		} else {
+			pthread_mutex_unlock(&task_queue_head->mutex); //没有任务执行, 解锁任务队列
+			pthread_mutex_lock(&thread_queue_busy->mutex); //上锁忙队列准备摘除已经运行的
 			//如果任务队列空,没有任务去执行,将当前结点从忙队列移动到空闲队列
 			//1. 从忙队列摘除,有四种情况:只有这一个节点,头上,尾巴,中间
 			if (thread_queue_busy->head == self && thread_queue_busy->rear == self) {
@@ -402,7 +404,7 @@ void *task_manager(void *ptr)
 			perror("server accept a client failed!\n");
 			goto accept_err;
 		}
-		printf("accepted");
+		printf("accepted\n");
 
 		//新连接接受完成, 开始new task
 		task_node_t* tmp;

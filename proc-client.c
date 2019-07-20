@@ -18,20 +18,23 @@ void *proc_client(void* ptr)
 	memset(&msg, '\0', sizeof(msg));
 	memset(&sendmsg, '\0', strlen(sendmsg));
 
+	//从客户端接收fd
+	ret = recv(cli_fd, &msg, sizeof(msg), 0);
+
 	int local_begin = ntohl(msg.file_begin);
 	int len = ntohl(msg.len);
 	int need_len = len;
-	int fd = open(msg.path, O_RDONLY);
+	int fd; 
 	char buf[MSG_SIZE] = "\0";
 	
-	//从客户端接收fd
-	ret = recv(cli_fd, &msg, sizeof(msg), 0);
+
 	if (ret < 0) {
 		perror("proc_client recv failed!\n");
 		close(cli_fd);
 		return NULL;
 	}
-
+	//从客户端接收的path参数argv[2]
+	fd = open(msg.path, O_RDONLY);
 	//分析msg命令
 	switch (msg.flag)
 	{
@@ -46,7 +49,7 @@ void *proc_client(void* ptr)
 		sprintf(sendmsg, "%d", htonl(mystat.st_size));
 		ret = send(cli_fd, sendmsg, strlen(sendmsg) + 1, 0);
 		if (ret < 0) {
-			perror("send file stat failed in proc_client");
+			printf("send file stat failed in proc_client\n");
 			close(cli_fd);
 			return NULL;
 		}
@@ -55,19 +58,19 @@ void *proc_client(void* ptr)
 		break;
 	case FILE: /* 发送文件 */
 		if(fd < 0) {
-			perror("request file open failed!\n");
+			perror("request file open failed!");
 			close(cli_fd);
 			return NULL;
 		}
 		lseek(fd, local_begin, SEEK_SET);
 		do {
 			//读取文件<=MSG_SIZE
-			if (need_len > MSG_SIZE) 
+			if (need_len > MSG_SIZE)
 				ret = read(fd, buf, MSG_SIZE);
 			else 
 				ret = read(fd, buf, need_len);
 			if (ret < 0) {
-				perror("read complete!\n");
+				perror("read complete!");
 				close(fd);
 				close(cli_fd);
 				return NULL;
@@ -81,6 +84,10 @@ void *proc_client(void* ptr)
 				return NULL;
 			}
 		} while (ret > 0);
+		if (ret < 0) {
+			close(fd);
+			close(cli_fd);
+		}
 		close(fd);
 		close(cli_fd);
 		break;
