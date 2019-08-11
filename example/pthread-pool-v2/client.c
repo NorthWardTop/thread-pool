@@ -54,6 +54,7 @@ int main(int argc,char *argv[])
 		perror("recv");exit(EXIT_FAILURE);
 	}	
 	
+	//----------------------
 	close(client_fd);
 	if(-1==(client_fd=socket(AF_INET,SOCK_STREAM,0)))
 	{
@@ -65,7 +66,6 @@ int main(int argc,char *argv[])
 	{
 		perror("connect");exit(EXIT_FAILURE);
 	}
-	
 	sendinfo.flag = 2;
 	sendinfo.local_begin = 0;
 	sendinfo.length = atoi (buf);
@@ -83,7 +83,7 @@ int main(int argc,char *argv[])
 	printf("length = %d\n",ntohl(sendinfo.length));
 	int ret = 0;
 	int sum = 0;
-	do
+	do 
 	{
 		ret = recv(client_fd,buf,1024,0);
 		write(file_fd,buf,ret);

@@ -8,8 +8,8 @@
  */
 
 
-#include "ds.h"
-
+#include "common.h"
+#include "pool.h"
 
 //全局变量声明
 extern task_queue_t *task_queue_head;	 //任务队列

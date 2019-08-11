@@ -8,7 +8,8 @@
  * 启动线程管理线程, 监控线程, 任务管理线程
  */
 
-#include "ds.h"
+#include "common.h"
+#include "pool.h"
 
 //全局队列定义
 task_queue_t *task_queue_head;	 //任务队列

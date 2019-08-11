@@ -1,4 +1,5 @@
-#include "ds.h"
+#include "common.h"
+#include "pool.h"
 
 
 /**
@@ -47,6 +48,7 @@ void *proc_client(void* ptr)
 		}
 		//打包发送
 		sprintf(sendmsg, "%d", htonl(mystat.st_size));
+		printf("size: %ld, strsize: %s", mystat.st_size, sendmsg);
 		ret = send(cli_fd, sendmsg, strlen(sendmsg) + 1, 0);
 		if (ret < 0) {
 			perror("send file stat failed in proc_client");

@@ -12,13 +12,7 @@
         "module.h": "c",
         "ds.h": "c",
         "errno.h": "c",
-        "fcntl.h": "c"
-    },
-    "C_Cpp.errorSquiggles": "Disabled",
-    "[cpp]": {
-        "editor.quickSuggestions": true
-        },
-    "[c]": {
-        "editor.quickSuggestions": true
+        "fcntl.h": "c",
+        "pthread_pool": "c"
     }
 }
