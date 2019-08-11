@@ -49,7 +49,7 @@ void *proc_client(void* ptr)
 		sprintf(sendmsg, "%d", htonl(mystat.st_size));
 		ret = send(cli_fd, sendmsg, strlen(sendmsg) + 1, 0);
 		if (ret < 0) {
-			printf("send file stat failed in proc_client\n");
+			perror("send file stat failed in proc_client");
 			close(cli_fd);
 			return NULL;
 		}
@@ -70,7 +70,7 @@ void *proc_client(void* ptr)
 			else 
 				ret = read(fd, buf, need_len);
 			if (ret < 0) {
-				perror("read complete!");
+				printf("read complete!\n");
 				close(fd);
 				close(cli_fd);
 				return NULL;

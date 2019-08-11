@@ -1,0 +1,121 @@
+write  -1  -------#include<error.h>  errno
+pipe 
+signal(pipe,handler)
+
+Linux 进程池/线程池
+
+1.任务池	
+	struct task_queue
+	{
+		struct task_node *head;
+	}
+	struct task_node
+	{
+		func;
+	}
+任务池对象：
+typedef struct task_queue 
+{
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;          /* when no task, the manager thread wait for ;when a new task come, signal. */
+  struct task_node *head;       /* point to the task_link. */
+  int number;                   /* current number of task, include unassinged and assigned but no finished. */
+} TASK_QUEUE_T;
+任务池节点：
+typedef struct task_node 
+{
+  void *arg;                    /* fun arg. */
+  void	);        /* the real work of the task. */
+  pthread_t tid;                /* which thread exec this task. */
+  int work_id;                  /* task id. */
+  int flag;                     /* 1: assigned, 0: unassigned. */
+  struct task_node *next;        
+  pthread_mutex_t mutex;        /* when modify this ds and exec the work,lock the task ds. */
+} TASK_NODE;
+
+线程池
+对象：
+typedef struct pthread_queue 
+{
+  int number;                  /* the number of thread in this queue. */
+  struct pthread_node *head;
+  struct pthread_node *rear;
+  pthread_cond_t cond;        /* when no idle thread, the manager wait for ,or when a thread return with idle, signal. */
+  pthread_mutex_t mutex; 
+} PTHREAD_QUEUE_T;
+
+每个线程的结构体
+typedef struct pthread_node 
+{
+  pthread_t tid;               /* the pid of this thread in kernel,the value is  syscall return . */
+  int flag;                    /*  1:busy, 0:free. */
+  struct task_node *work;      /*  if exec a work, which work. */
+  struct pthread_node *next;
+  struct pthread_node *prev;
+  pthread_cond_t cond;        /* when assigned a task, signal this child thread by manager. */
+  pthread_mutex_t mutex; 
+} THREAD_NODE;
+
+
+
+struct threadpool
+{
+    int thread_num;                   //线程池中开启线程的个数
+    int queue_max_num;                //队列中最大job的个数
+    struct job *head;                 //指向job的头指针
+    struct job *tail;                 //指向job的尾指针
+    pthread_t *pthreads;              //线程池中所有线程的pthread_t
+    pthread_mutex_t mutex;            //互斥信号量
+    pthread_cond_t queue_empty;       //队列为空的条件变量
+    pthread_cond_t queue_not_empty;   //队列不为空的条件变量
+    pthread_cond_t queue_not_full;    //队列不为满的条件变量
+    int queue_cur_num;                //队列当前的job个数
+    int queue_close;                  //队列是否已经关闭
+    int pool_close;                   //线程池是否已经关闭
+};
+
+struct job
+{
+    void* (*callback_function)(void *arg);    //线程回调函数
+    void *arg;                                //回调函数参数
+    struct job *next;
+};
+
+线程池创建后，没有工作的线程 都会发生阻塞
+ 阻塞在条件变量 pthread_cond_t cond;
+ 一般在管理线程中被唤醒 
+ 
+ 主线程：
+ 1.初始化全局变量：创建线程池对象和任务队列对象
+ 2.创建线程池：为每个线程分配线程数据结构，初始化各成员，构建成一个空闲
+    线程双向缓冲区， 为每个节点创建线程 并且让所有的线程阻塞在自己的条件
+	变量上。
+	
+	
+	
+	
+child_work：线程接口
+	
+	
+	
+任务线程：  
+	以服务器的设计为模板
+	1.基于TCP的监听服务  accept  epoll,如果有链接到达，创建新的任务节点
+	将该链接的socket文件描述符作为参数传递给当前任务结点，然后将该任务节点
+	添加到任务队列 ，并激活在任务池条件变量阻塞的管理线程
+
+管理线程：
+	1.从任务队列中获取一个未分配的任务，如果没有任务，则阻塞在任务池的条件变量
+	2.从空闲的线程池中取一个空闲线程，如果没有空闲线程，阻塞(添加到等待队列上)
+	3.修改任务属性和线程属性   修改谁就锁定谁的互斥锁
+	4.修改工作线程池，将刚分配了任务的空闲线程加入到工作队列中 
+	5.激活在条件变量上阻塞的线程
+	
+ 
+项目设计 实现多线程的线程池操作
+ 
+ 
+ 
+ 
+ 
+ 
