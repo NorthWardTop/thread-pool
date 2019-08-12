@@ -1,7 +1,15 @@
 
+#include <pthread.h>
+
 #include "common.h"
 #include "pool.h"
 
+#define TEST_THREAD_NUM	2
+
+
+#define REMOTE_FILE		"test.txt"
+#define SAVE_AS			"mk"
+#define SERVER_ADDR		"127.0.0.1"
 
 
 size_t get_file_size(int cli_fd, const char *remote_file)
@@ -23,6 +31,7 @@ size_t get_file_size(int cli_fd, const char *remote_file)
 		close(cli_fd);
 		return 0;
 	}
+
 	ret = recv(cli_fd, recvmsg, MSG_SIZE, 0);
 	fileSize = atoi(recvmsg);
 	fileSize = ntohl(fileSize);
@@ -45,8 +54,6 @@ int download_file(int cli_fd, const char *remote_file, const char *save_as, size
 	info_t sendinfo;
 	char recvmsg[MSG_SIZE];
 
-	
-	// fileSize = get_file_size(cli_fd, remote_file);
 	/* 测试二 获取文件/下载文件 */
 	//服务端逻辑仅仅服务一次, 重新服务必须重新连接
 	
@@ -88,46 +95,17 @@ int download_file(int cli_fd, const char *remote_file, const char *save_as, size
 	return 0;
 }
 
-/**
- * @description: 网络客户端,用于测试线程池
- * @param {
- * 4个参数
- * argv[1]=端口
- * argv[2]=要访问的远程文件
- * argv[3]=下载的文件名} 
- * @return: 
- */
-int main(int argc, const char *argv[])
-{
-	if (argc != 4) {
-		printf("Usage: %s port remote_file save_as\n", argv[0]);
-		return 0;
-	}
 
+void *thread_func(void *arg)
+{
 	struct sockaddr_in srvaddr;
 	int cli_fd, ret;
 
-	//设置地址信息
-	//方法一:直接输入地址...
 	bzero(&srvaddr, sizeof(srvaddr));
 	srvaddr.sin_family = AF_INET;
-	srvaddr.sin_port = htons(atoi(argv[1]));
-	srvaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	//方法二:从interface获取
-	// strcpy(ifr.ifr_name, "lo");
-	// ret = ioctl(cli_fd, SIOCGIFADDR, &ifr);
-	// if (ret < 0) {
-	// 	perror("get PA address failed!");
-	// 	close(cli_fd);
-	// 	return 0;
-	// }
-	
-	// srvaddr.sin_family = AF_INET;
-	// srvaddr.sin_port = (atoi(argv[1]));
-	// /* 先将ifr.ifr_name强转为sockaddr_in,再->sin_addr.s_addr */
-	// srvaddr.sin_addr.s_addr = 
-	// 	((struct sockaddr_in*)&(ifr.ifr_name))->sin_addr.s_addr;
-	
+	srvaddr.sin_port = htons(PORT);
+	srvaddr.sin_addr.s_addr = inet_addr(SERVER_ADDR);
+
 	cli_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (cli_fd < 0) {
 		perror("client socket failed!");
@@ -140,8 +118,9 @@ int main(int argc, const char *argv[])
 		close(cli_fd);
 		return 0;
 	}
+
 	//获取文件大小
-	size_t fileSize = get_file_size(cli_fd, argv[2]);
+	size_t fileSize = get_file_size(cli_fd, REMOTE_FILE);
 	close(cli_fd);
 	cli_fd = 0;
 
@@ -158,9 +137,41 @@ int main(int argc, const char *argv[])
 	}
 
 
-	download_file(cli_fd, argv[2], argv[3], fileSize);
-	
+	download_file(cli_fd, REMOTE_FILE, SAVE_AS, fileSize);
+	return NULL;
 
+}
+
+/**
+ * @description: 网络客户端,用于测试线程池
+ * @param {
+ * 4个参数
+ * argv[1]=端口
+ * argv[2]=要访问的远程文件
+ * argv[3]=下载的文件名} 
+ * @return: 
+ */
+int main(int argc, const char *argv[])
+{
+	// if (argc != 4) {
+	// 	printf("Usage: %s port remote_file save_as\n", argv[0]);
+	// 	return 0;
+	// }
+
+	
+	// int cli_fd, ret;
+	pthread_t tids[TEST_THREAD_NUM];
+
+	//设置地址信息
+	//方法一:直接输入地址...
+	
+	
+	for (size_t i = 0; i < TEST_THREAD_NUM; i++)
+		pthread_create(&tids[i], NULL, thread_func, NULL);
+
+	for (size_t i = 0; i < TEST_THREAD_NUM; i++)
+		pthread_join(tids[i], NULL);
+	
 	
 
 	perror("end");

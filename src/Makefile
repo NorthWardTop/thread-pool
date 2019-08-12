@@ -16,7 +16,7 @@ pool:$(OBJECT)
 	$(CC) -o $@ $(OBJECT) $(LDFLAGS)
 
 client:client.c
-	$(CC) $(CCFLAG) -o $@ $^
+	$(CC) $(CCFLAG) -o $@ $^ $(LDFLAGS)
 
 .PHONY:clean
 clean:

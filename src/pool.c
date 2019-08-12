@@ -185,6 +185,7 @@ void *do_work(void *arg)
 				self->prev = NULL; self->next = NULL;
 			} else {
 				//中间
+				//SF
 				self->prev->next = self->next;
 				self->next->prev = self->prev;
 				self->prev = NULL; self->next = NULL;
@@ -431,7 +432,7 @@ void *task_manager(void *ptr)
 		} else {
 			tmp = task_queue_head->head;
 			while (tmp) 
-				tmp = tmp->next;
+				tmp = tmp->next;//SF
 			tmp->next = newtask;
 		}
 		task_queue_head->number++;

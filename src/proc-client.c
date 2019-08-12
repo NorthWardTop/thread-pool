@@ -35,14 +35,31 @@ void *proc_client(void* ptr)
 		return NULL;
 	}
 	//从客户端接收的path参数argv[2]
+
+
+	printf("file:%s ", msg.path);
+	ret = stat(msg.path, &mystat); //获取文件状态
+	if (ret < 0) {
+			perror("client get file status failed!");
+			close(cli_fd);
+			return NULL;
+		}
 	fd = open(msg.path, O_RDONLY);
+	ret = stat(msg.path, &mystat); //获取文件状态
+	if (ret < 0) {
+			perror("client get file status failed!");
+			close(cli_fd);
+			return NULL;
+		}
+
+		
 	//分析msg命令
 	switch (msg.flag)
 	{
 	case FILE_STAT: /* 发送文件状态(大小) */
 		ret = stat(msg.path, &mystat); //获取文件状态
 		if (ret < 0) {
-			perror("client get file status failed!\n");
+			perror("client get file status failed!");
 			close(cli_fd);
 			return NULL;
 		}
@@ -98,5 +115,6 @@ void *proc_client(void* ptr)
 		break;
 		return NULL;
 	}
+
 	return NULL;
 }

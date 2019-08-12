@@ -13,6 +13,7 @@
         "ds.h": "c",
         "errno.h": "c",
         "fcntl.h": "c",
-        "pthread_pool": "c"
+        "pthread_pool": "c",
+        "pool.h": "c"
     }
 }
