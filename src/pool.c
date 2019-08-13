@@ -340,7 +340,6 @@ void *thread_manager(void *ptr)
 		//没有人等待忙队列
 		// pthread_cond_signal(&thread_queue_busy->cond);
 
-
 	}
 	return NULL;
 }
@@ -481,6 +480,15 @@ void *monitor(void *ptr)
 		pthread_mutex_unlock(&thread_queue_busy->mutex);
 		//等待几秒再遍历
 		sleep(5);
+
+		int new_number;
+		if (thread_queue_idle->number < THREAD_DEF_NUM*(1/5)) {
+			//创建线程达到THREAD_DEF_NUM
+			new_number = THREAD_DEF_NUM;
+		} 
+		if (thread_queue_busy->number < THREAD_DEF_NUM*(1/5)) {
+			new_number = THREAD_DEF_NUM*(1/2);
+		}
 	}
 
 	return NULL;
